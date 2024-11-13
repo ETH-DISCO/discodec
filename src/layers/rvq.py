@@ -4,7 +4,7 @@ from flax import linen as nn
 from einops import rearrange
 from typing import Sequence, Union
 
-from .layers import WNConv
+from src.layers.convs import WNConv
 
 
 def normalize(x, axis=-1, ord=2, eps=1e-12):

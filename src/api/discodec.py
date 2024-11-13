@@ -7,9 +7,9 @@ import flax.linen as nn
 import optax
 from einops import rearrange
 
-from src.model import Model
-from src.discriminator import Discriminator
-from src.utils import load_model
+from src.model.generator import Model
+from src.model.discriminator import Discriminator
+from src.utils.utils import load_model
 
 class DisCodec:
     def __init__(self, data_shape, variant):

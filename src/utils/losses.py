@@ -2,7 +2,7 @@ import jax
 from jax import numpy as jnp
 from librosa.filters import mel as librosa_mel_fn
 
-from .utils import stft, audiotools_mel_spec
+from src.utils.utils import stft, audiotools_mel_spec
 
 
 def l1_loss(x, y):

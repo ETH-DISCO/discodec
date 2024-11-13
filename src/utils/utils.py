@@ -25,6 +25,7 @@ def load_model(variant):
     if not os.path.exists(model_dir):
         print(f'{model_name} model not found in cache. Downloading...')
         download_model(variant)
+        print(f'{model_name} model downloaded to {model_dir}')
 
     return model_dir
 
