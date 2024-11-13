@@ -32,6 +32,6 @@ recon = model.decode(z)
 
 ### TODOs
 
-- [✓] Add quantized variant.
-- [✓] Add usage example.
+- [x] Add quantized variant.
+- [x] Add usage example.
 - [ ] Add VAE variant.
