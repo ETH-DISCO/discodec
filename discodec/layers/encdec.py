@@ -3,8 +3,8 @@ from jax import random
 from flax import linen as nn
 from typing import Sequence, Callable
 
-from src.layers.convs import Snake1d, WNConv, WNConvTranspose, ConvNeXtBlock
-from src.layers.attention import LocalMHA
+from discodec.layers.convs import Snake1d, WNConv, WNConvTranspose, ConvNeXtBlock
+from discodec.layers.attention import LocalMHA
 
 
 class ResidualUnit(nn.Module):

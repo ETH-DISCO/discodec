@@ -4,8 +4,8 @@ from flax import linen as nn
 from einops import rearrange
 from typing import Sequence
 
-from src.layers.convs import WNConv
-from src.utils.utils import stft, as_real
+from discodec.layers.convs import WNConv
+from discodec.utils.utils import stft, as_real
 
 
 act = partial(nn.leaky_relu, negative_slope=0.1)

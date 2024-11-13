@@ -5,8 +5,8 @@ from flax import linen as nn
 
 from typing import Sequence, Union, Callable
 
-from src.layers.encdec import Encoder, Decoder
-from src.layers.rvq import ResidualVectorQuantize
+from discodec.layers.encdec import Encoder, Decoder
+from discodec.layers.rvq import ResidualVectorQuantize
 
 class Model(nn.Module):
     encoder_dim: int = 64
