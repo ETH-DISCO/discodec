@@ -34,4 +34,4 @@ recon = model.decode(z)
 
 - [x] Add quantized variant.
 - [x] Add usage example.
-- [ ] Add VAE variant.
+- [x] Add VAE variant.

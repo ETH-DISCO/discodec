@@ -9,9 +9,11 @@ import requests
 
 class Variant(Enum):
     VQ_QUANTDROPOUT = 0
+    VAE_64DIM = 1
 
 CONFIG_MAP = {
     Variant.VQ_QUANTDROPOUT: ('https://github.com/ETH-DISCO/discodec/releases/download/v0.0.1/vq_quantdropout.zip', 'vq_quantdropout'),
+    Variant.VAE_64DIM: ('https://github.com/ETH-DISCO/discodec/releases/download/v0.0.1/vae-64dim.zip', 'vae-64dim'),
 }
 MODEL_DIR = '~/.cache/discodec'
 
