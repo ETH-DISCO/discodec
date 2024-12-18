@@ -7,6 +7,8 @@ from typing import Sequence, Union, Callable
 
 from discodec.layers.encdec import Encoder, Decoder
 from discodec.layers.rvq import ResidualVectorQuantize
+from discodec.model.vae import Model as VAEBase
+
 
 class Model(nn.Module):
     encoder_dim: int = 64
@@ -91,4 +93,110 @@ class Model(nn.Module):
             "latents": latents,
             "vq/commitment_loss": commitment_loss,
             "vq/codebook_loss": codebook_loss,
+        }
+
+
+class VAEModel(VAEBase):
+    encoder_dim: int = 64
+    encoder_rates: Sequence[int] = (3, 3, 7, 7)
+    init_latent_dim: int = None
+    decoder_dim: int = 1536
+    decoder_rates: Sequence[int] = (7, 7, 3, 3)
+    vq_strides: Sequence[int] = (8, 4, 2, 1)
+    codebook_size: int = 1024
+    codebook_dim: Union[int, list] = 8
+    quantizer_dropout: float = 0.0
+    sample_rate: int = 44100
+    decoder_output_act: Callable = nn.tanh
+    noise: bool = True
+    depthwise: bool = True
+    attn_window_size: int = None
+
+    def setup(self):
+        if self.init_latent_dim is None:
+            self.latent_dim = self.encoder_dim * (2 ** len(self.encoder_rates))
+        else:
+            self.latent_dim = self.init_latent_dim
+        
+        self.n_codebooks = len(self.vq_strides)
+        self.hop_length = math.prod(self.encoder_rates)
+
+        self.encoder = Encoder(self.encoder_dim,
+                                self.encoder_rates,
+                                self.latent_dim,
+                                depthwise=self.depthwise)
+        
+        self.quantizer = ResidualVectorQuantize(
+            input_dim=self.latent_dim,
+            vq_strides=self.vq_strides,
+            codebook_size=self.codebook_size,
+            init_codebook_dim=self.codebook_dim,
+            quantizer_dropout=self.quantizer_dropout,
+        )
+        
+        self.decoder = Decoder(
+            self.decoder_dim,
+            self.decoder_rates,
+            output_act=self.decoder_output_act,
+            noise=self.noise,
+            depthwise=self.depthwise,
+        )
+        
+        self.latent_proj = nn.DenseGeneral(
+            features=(self.codeword_dim, 2),
+            axis=-1,
+        )
+        
+    def preprocess(self, audio_data, sample_rate):
+        if sample_rate is None:
+            sample_rate = self.sample_rate
+        assert sample_rate == self.sample_rate, "Sample rate mismatch"
+
+        length = audio_data.shape[-2]
+
+        right_pad = math.ceil(length / self.hop_length) * self.hop_length - length
+        audio_data = jnp.pad(audio_data, ((0, 0), (0, right_pad), (0, 0)))
+
+        return audio_data
+
+    def encode(self, audio_data, training: bool = False):
+        # audio_data: (b, t, 1)
+
+        z = self.encoder(audio_data)
+        z = self.latent_proj(z)
+        mu, logvar = z[..., 0], z[..., 1]
+
+        return mu, logvar
+
+    def decode(self, z, training: bool = False):
+        return self.decoder(z, train=training)
+    
+    def __call__(
+        self,
+        audio_data,
+        sample_rate: int = None,
+        training: bool = False,
+        n_quantizers: int = None
+    ):
+        # audio_data: (b, t, 1)
+        length = audio_data.shape[-2]
+        audio_data = self.preprocess(audio_data, sample_rate)
+        
+        mu, logvar = self.encode(
+            audio_data, training
+        )
+        
+        if training:
+            z = self.reparametrize(mu, logvar)
+        else:
+            z = mu
+        
+        z = self.code_dropout_fn(z, train=training)
+        z = self.decode(z, training)
+        
+        return {
+            "audio": z[..., :length, :],
+            "z": z,
+            "mu": mu,
+            "logvar": logvar,
         }

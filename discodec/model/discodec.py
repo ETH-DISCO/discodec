@@ -7,13 +7,14 @@ import flax.linen as nn
 import optax
 from einops import rearrange
 
-from discodec.model.generator import Model
+from discodec.model.generator import Model, VAEModel
 from discodec.model.discriminator import Discriminator
-from discodec.utils.utils import load_model
+from discodec.utils.utils import CONFIG_MAP, load_model
 
 class DisCodec:
     def __init__(self, data_shape, variant):
         path = load_model(variant)
+        self.is_vae = CONFIG_MAP[variant][2]
         self.ckpt_mngr = ocp.CheckpointManager(path,
                                                item_names=('gen_state', 'disc_state', 'config'))
 
@@ -25,7 +26,10 @@ class DisCodec:
         return state
 
     def _create_gen_state(self, config, batch, key):
-        generator = Model(**config['dac'], decoder_output_act=nn.tanh)
+        if self.is_vae:
+            generator = VAEModel(**config['dac'], decoder_output_act=nn.tanh)
+        else:
+            generator = Model(**config['dac'], decoder_output_act=nn.tanh)
 
         gen_scheduler = optax.exponential_decay(config['adamw']['lr'], 1, config['exponential_lr']['gamma'])
         gen_opt = optax.chain(
